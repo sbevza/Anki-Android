@@ -140,6 +140,7 @@ import timber.log.Timber;
 import static com.ichi2.anki.cardviewer.CardAppearance.calculateDynamicFontSize;
 import static com.ichi2.anki.cardviewer.ViewerCommand.*;
 import static com.ichi2.anki.reviewer.CardMarker.*;
+import static com.ichi2.async.CollectionTask.TASK_TYPE.*;
 
 @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes","PMD.FieldDeclarationsShouldBeAtStartOfClass"})
 public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity implements ReviewerUi, CommandProcessor {
@@ -1085,7 +1086,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
            note type could have lead to the card being deleted */
         if (data != null && data.hasExtra("reloadRequired")) {
             getCol().getSched().deferReset();
-            CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_ANSWER_CARD, mAnswerCardHandler(false),
+            CollectionTask.launchCollectionTask(ANSWER_CARD, mAnswerCardHandler(false),
                     new CollectionTask.TaskData(null, 0));
         }
 
@@ -1093,7 +1094,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
             if (resultCode == RESULT_OK) {
                 // content of note was changed so update the note and current card
                 Timber.i("AbstractFlashcardViewer:: Saving card...");
-                CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_UPDATE_NOTE, mUpdateCardHandler,
+                CollectionTask.launchCollectionTask(UPDATE_NOTE, mUpdateCardHandler,
                         new CollectionTask.TaskData(sEditorCard, true));
             } else if (resultCode == RESULT_CANCELED && !(data!=null && data.hasExtra("reloadRequired"))) {
                 // nothing was changed by the note editor so just redraw the card
@@ -1101,7 +1102,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
             }
         } else if (requestCode == DECK_OPTIONS && resultCode == RESULT_OK) {
             getCol().getSched().deferReset();
-            CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_ANSWER_CARD, mAnswerCardHandler(false),
+            CollectionTask.launchCollectionTask(ANSWER_CARD, mAnswerCardHandler(false),
                     new CollectionTask.TaskData(null, 0));
         }
         if (!mDisableClipboard) {
@@ -1191,7 +1192,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
 
     protected void undo() {
         if (isUndoAvailable()) {
-            CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_UNDO, mAnswerCardHandler(false));
+            CollectionTask.launchCollectionTask(UNDO, mAnswerCardHandler(false));
         }
     }
 
@@ -1344,7 +1345,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
         mSoundPlayer.stopSounds();
         mCurrentEase = ease;
 
-        CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_ANSWER_CARD, mAnswerCardHandler(true),
+        CollectionTask.launchCollectionTask(ANSWER_CARD, mAnswerCardHandler(true),
                 new CollectionTask.TaskData(mCurrentCard, mCurrentEase));
     }
 
@@ -2624,7 +2625,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
     /**
      * Provides a hook for calling "alert" from javascript. Useful for debugging your javascript.
      */
-    public final class AnkiDroidWebChromeClient extends WebChromeClient {
+    public static final class AnkiDroidWebChromeClient extends WebChromeClient {
         @Override
         public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
             Timber.i("AbstractFlashcardViewer:: onJsAlert: %s", message);
@@ -3057,7 +3058,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
 
     protected void dismiss(Collection.DismissType type) {
         blockControls(false);
-        CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_DISMISS, mDismissCardHandler,
+        CollectionTask.launchCollectionTask(DISMISS, mDismissCardHandler,
                 new CollectionTask.TaskData(new Object[]{mCurrentCard, type}));
     }
 
@@ -3451,7 +3452,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity i
 
     @VisibleForTesting
     void loadInitialCard() {
-        CollectionTask.launchCollectionTask(CollectionTask.TASK_TYPE_ANSWER_CARD, mAnswerCardHandler(false),
+        CollectionTask.launchCollectionTask(ANSWER_CARD, mAnswerCardHandler(false),
                 new CollectionTask.TaskData(null, 0));
     }
 
@@ -3551,6 +3552,7 @@ see card.js for available functions
         }
 
         @JavascriptInterface
+        @Consts.CARD_QUEUE
         public int ankiGetCardQueue() {
             return mCurrentCard.getQueue();
         }
